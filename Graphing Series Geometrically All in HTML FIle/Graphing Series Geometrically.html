@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+  <title>Graphing Series</title>
+  <link rel="icon" href="./icon.png" />
+</head>
+
+<style>
+    * {
+     background-color: #121212;
+     margin: 0px;
+     padding: 0px;
+  }
+
+  #sidenav {
+      height: 100%;
+      width: 250px;
+      position: fixed;
+      overflow-y: scroll; /* allows this to be scrolled individually */
+      top: 0;
+      left: 0;
+      background-color: #121212;
+      padding-top: 10px;
+      display: flex;
+      flex-direction: column;
+  }
+
+  #sidenav .text{
+      color: white;
+      margin: 0px;
+      align-self: center;
+      margin: 10px;
+  }
+
+  #sidenav .slider{
+      -webkit-appearance: none;
+      background: #5B5B5B  ;
+      width: 90%;
+      height: 20px;
+      padding: 2px;
+      align-self: center;
+  }
+
+  #sidenav .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      cursor: pointer;
+      background: #0000FF ;
+      width: 5%;
+      height: 22px;
+      align-self: center;
+  }
+
+  #sidenav #form-group {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 5px;
+  }
+
+  #sidenav .button {
+      color: white;
+      transition-duration: 0.4s;
+      cursor: pointer;
+      width: fit-content;
+      margin: 5px;
+      margin-bottom: 10px;
+      padding: 5px;
+      background-color: #121212;
+      border: 2px solid blue;
+  }
+
+  #sidenav .button:hover {
+      background-color: white;
+      color: #121212;
+  }
+
+  #sidenav .inc {
+        width: 90%;
+        font-size: 20px;
+        padding: 0px;
+        align-self: center;
+  }
+
+  #canvas{
+      margin-left: 250px;
+      transition: margin-left .5s;
+      position: fixed;
+      right: 0;
+      top: 0;
+  }
+
+</style>
+
+<body>
+
+  <div id="sidenav">
+      <input type="range" min="0.02" max="10" value="2.5" class="slider" step='0.02' id="zoom">
+
+      <div class="text">
+        <p>Zoom</p>
+      </div>
+
+        <input type="range" min="0" max="100" value="0" class="slider" id="n">
+
+      <div class="text">
+        <p id="nIsEqualTo">n = </p>
+      </div>
+
+      <div id="form-group"></div>
+
+      <button class="button buttonStyle inc" onClick="addFunction()">+</button>
+
+  </div>
+
+  <div id="canvas">
+
+    <canvas id="gameCanvas" width="600" height="700"></canvas>
+
+    <script>var canvas;
+var canvasContext;
+var canvasOffSets;
+
+window.onload = function() {
+  canvas = document.getElementById('gameCanvas');
+  canvasContext = canvas.getContext('2d');
+
+  canvas.width  = window.innerWidth-document.getElementById("sidenav").offsetWidth;
+  canvas.height = window.innerHeight;
+  canvasOffSets = document.getElementById('gameCanvas').getBoundingClientRect();
+
+  start();
+
+  //start of program drawing
+    var framesPerSecond = 30;
+  setInterval(function(){update();},1000/framesPerSecond);
+}
+
+function update(){
+  drawGraph();
+}
+
+function start(){
+  canvasContext.translate(canvas.width/2+offX, canvas.height/2+offY);
+
+  graphs.push(new Graph());
+
+
+  // let outputQueue = parse("n!", 52);
+  // console.log(eval(outputQueue, 52));
+
+  getGraphs();
+  drawGraphs();
+}
+
+</script>
+    <script>function Rectangle(x1,y1, x2,y2, c, w,h){
+    this.x1 = x1;
+    this.y1 = y1;
+    this.x2 = x2; 
+    this.y2 = y2;
+    this.w = distanceOfTwoPoints(this.x1,this.y1,this.x2,this.y1);
+    this.h = distanceOfTwoPoints(this.x2,this.y1,this.x2,this.y2);
+    this.a = Math.abs(this.w * this.h);
+             
+    this.color = c;
+    this.type = "rect"
+    this.id = globalIdCounter + 1;
+    globalIdCounter++;
+
+    this.north = new LineSegment(this.x1, this.y1, this.x2,this.y1, "black");
+    this.east = new LineSegment(this.x2,this.y1, this.x2,this.y2, "black");
+    this.south = new LineSegment(this.x2,this.y2, this.x1,this.y2, "black");
+    this.west = new LineSegment(this.x1,this.y2, this.x1, this.y1, "black");
+
+    this.draw = function(fill){
+
+        this.north.draw(this.color);
+        this.east.draw(this.color);
+        this.south.draw(this.color);
+        this.west.draw(this.color);
+
+        if(fill){
+            colorRect((this.x1 / zoom) * canvas.width + offX * canvas.width/zoom, 
+                      (this.y1 / zoom) * canvas.height + offY * canvas.height/zoom, 
+                      (this.w / zoom) * canvas.width, (this.h / zoom) * canvas.height, this.color);
+
+            this.north.draw("black");
+            this.east.draw("black");
+            this.south.draw("black");
+            this.west.draw("black");
+        }
+
+        
+        // drawText("black", this.a.toFixed(3) + ", " + this.id, ((this.x1+this.w/2) / zoom) * canvas.width + offX * canvas.width/zoom,
+        //     ((this.y1+this.h/2) / zoom) * canvas.height + offY * canvas.height/zoom)
+    }
+
+    this.intersectionRect = function(target, type){
+
+        if(type == 0 && this.x2 >= target.x1 &&
+           this.x1 <= target.x2 &&
+           this.y2 > target.y1 &&
+           this.y1 < target.y2){
+
+            return true;
+        }
+
+        if(type == 1 && this.x2 > target.x1 &&
+           this.x1 < target.x2 &&
+           this.y2 >= target.y1 &&
+           this.y1 <= target.y2){
+            return true;
+        }
+
+
+        if(type == 2 && this.x2 >= target.x1 &&
+           this.x1 <= target.x2 &&
+           this.y2 >= target.y1 &&
+           this.y1 <= target.y2){
+            return true;
+        }
+
+        return false;
+    }
+}
+
+function Triangle(b,h, x,y, c){
+    this.b = b;
+    this.h = h;
+    this.x = x; 
+    this.y = y;
+    this.color = c;
+    this.type = "tri"
+
+    this.draw = function(fill){
+        if(fill){
+            drawFillTriangle(this.x-this.b/2,this.y+h/2, this.x+this.b/2,this.y+h/2, this.x,this.y-h/2, this.color);
+        }
+        drawNoFillTriangle(this.x-this.b/2,this.y+h/2, this.x+this.b/2,this.y+h/2, this.x,this.y-h/2, this.color)
+    }
+}
+
+function LineSegment(x1,y1, x2,y2){
+    this.x1 = x1;
+    this.y1 = y1;
+    this.x2 = x2;
+    this.y2 = y2;
+
+    this.draw = function(color){
+
+        drawLine((this.x1 / zoom) * canvas.width + offX * canvas.width/zoom,
+                 (this.y1 / zoom) * canvas.height + offY * canvas.height/zoom,
+                 (this.x2 / zoom) * canvas.width + offX * canvas.width/zoom,
+                 (this.y2 / zoom) * canvas.height + offY * canvas.height/zoom, 1, color)
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//this is for setting the buttons so that i will show a graph element or not :)
+
+function addFunction(){
+    graphs.push(new Graph());
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function getPosOfMarkers(len, real_len, off){
+    let posMarkers = [];
+
+    let a = -off - len/2 + 0.0001;
+    let b = -off + len/2 + 0.0001;
+
+    let deltaX = 2;
+
+    let numMarks = 0;
+    for (var i = 0; i < zoom; i += deltaX) {
+        numMarks++;
+    }
+
+    while(numMarks < NUM_MARKS){
+        deltaX -= deltaX/2;
+
+        numMarks = 0;
+        for (var i = 0; i < zoom; i += deltaX) {
+            numMarks++;
+        }
+    }
+
+    while(numMarks > NUM_MARKS){
+        deltaX += deltaX;
+
+        numMarks = 0;
+        for (var i = 0; i < zoom; i += deltaX) {
+            numMarks++;
+        }
+    }
+
+    let firstX = undefined;
+    let j = 0;
+
+    if(a < 0){
+        while(j > a){
+            j -= deltaX;
+        }
+        firstX = j + deltaX;
+    }
+
+    if(a > 0){
+        j = 0;
+        while(j < a){
+            j += deltaX;
+        }
+        firstX = j;
+    }
+
+    j = 1;
+    posMarkers.push(firstX);
+    while(firstX + j * deltaX < b){
+        posMarkers.push(firstX + j * deltaX);
+        j++;
+    }
+
+    return posMarkers;
+}
+
+function getRGB(a){
+    if(graphs.length == 2){
+        return 'rgba('+ 0 +','+ 255 +','+ 0 +','+ a +')'
+    }
+    if(graphs.length == 1){
+        return 'rgba('+ 255 +','+ 0 +','+ 0 +','+ a +')'
+    }
+    if(graphs.length == 0){
+        return 'rgba('+ 0 +','+ 0 +','+ 255 +','+ a +')'
+    }
+    if(graphs.length == 3){
+        return 'rgba('+ 255 +','+ 255 +','+ 0 +','+ a +')'
+    }
+    if(graphs.length == 4){
+        return 'rgba('+ 0 +','+ 255 +','+ 255 +','+ a +')'
+    }
+    if(graphs.length == 5){
+        return 'rgba('+ 255 +','+ 0 +','+ 255 +','+ a +')'
+    }
+    if(graphs.length > 5){
+        return 'rgba('+ 255*Math.random() +','+ 255*Math.random() +','+ 255*Math.random() +','+ a +')'
+    }
+}
+
+
+function distanceOfTwoPoints(x1, y1, x2, y2){
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+}
+
+
+function randomIntFromInterval(min, max) { // min and max included 
+  return Math.random() * (max - min + 1) + min;
+}
+
+function colorRect(topLeftX, topLeftY, boxWidth, boxHeight, fillColor) {
+    canvasContext.fillStyle = fillColor;
+    canvasContext.fillRect(topLeftX, topLeftY, boxWidth, boxHeight);
+}
+
+function colorNoFillRect(topLeftX, topLeftY, boxWidth, boxHeight, fillColor){
+    canvasContext.beginPath();
+    canvasContext.strokeStyle = fillColor;
+    canvasContext.lineWidth = 1;
+    canvasContext.rect(topLeftX, topLeftY, boxWidth, boxHeight);
+    canvasContext.stroke();
+}
+
+function colorCircle(centerX, centerY, radius, fillColor) {
+    canvasContext.fillStyle = fillColor;
+    canvasContext.beginPath();
+    canvasContext.arc(centerX, centerY, radius, 0, Math.PI*2, true);
+    canvasContext.fill();
+}
+
+function drawNoFillTriangle(x1,y1, x2,y2, x3,y3, width, color){
+    drawLine(x1,y1,x2,y2,2,color)
+    drawLine(x2,y2,x3,y3,2,color)
+    drawLine(x3,y3,x1,y1,2,color)
+}
+
+function drawFillTriangle(x1,y1, x2,y2, x3,y3, color){
+    canvasContext.fillStyle = color;
+    canvasContext.beginPath();
+    canvasContext.moveTo(x1, y1);
+    canvasContext.lineTo(x2, y2);
+    canvasContext.lineTo(x3, y3);
+    canvasContext.fill();
+}
+
+function drawText(color, words, X, Y){
+    canvasContext.fillStyle = color;
+    canvasContext.fillText(words, X, Y);
+}
+
+function drawLine(x1,y1,x2,y2,width,color){
+    canvasContext.lineWidth = width;
+    canvasContext.strokeStyle = color;
+    canvasContext.beginPath()
+    canvasContext.moveTo(x1, y1);
+    canvasContext.lineTo(x2, y2);
+    canvasContext.stroke();
+}
+
+function removeFromArray(array,index){
+    for(i = array.length - 1; i >= 0; i--){
+        if(i == index){
+            array.splice(index, 1);
+        }
+    }
+}
+
+function insertAt(array, index, elementsArray) {
+    for(i = elementsArray.length - 1; i >= 0; i--){
+        array.splice(index, 0, elementsArray[i]);
+    }
+}
+
+function insertStringAt(index, string, newString) {
+  if (index > 0) {
+    return string.substring(0, index) + newString + string.substring(index);
+  }
+
+  return newString + string;
+};
+
+
+function deepCopy(arr){
+  let copy = [];
+  arr.forEach(elem => {
+    if(Array.isArray(elem)){
+      copy.push(deepCopy(elem))
+    }else{
+      if (typeof elem === 'object') {
+        copy.push(deepCopyObject(elem))
+    } else {
+        copy.push(elem)
+      }
+    }
+  })
+  return copy;
+}
+// Helper function to deal with Objects
+function deepCopyObject(obj){
+  let tempObj = {};
+  for (let [key, value] of Object.entries(obj)) {
+    if (Array.isArray(value)) {
+      tempObj[key] = deepCopy(value);
+    } else {
+      if (typeof value === 'object') {
+        tempObj[key] = deepCopyObject(value);
+      } else {
+        tempObj[key] = value
+      }
+    }
+  }
+  return tempObj;
+}
+
+
+
+</script>
+    <script>// a 0 is a number 
+// a 1 is a operator
+// a 2 is a function like sin or cos
+
+const SYBOL_LIST = ['+','-','*','/','(',')','^','!'];
+const FUNC_LIST = ['sin','cos','tan','sec','csc','cot','abs','sqrt',
+                   'arcsin','arccos','arctan','log', 'ln', 'e', 'pi'];
+
+const E = 2.7182818284590452353602874713527;
+const PI = 3.141592653589793238462643383279;
+
+function parse(string, atN){
+  let sybols_And_Indexes = [];
+  let outputQueue = [];
+  let operatorStack = [];
+
+  fixStringFormatToTokenize(string, sybols_And_Indexes, operatorStack, atN);
+
+  if(sybols_And_Indexes.length > 0){
+    setPrecedence(sybols_And_Indexes);
+    shuntingYard(sybols_And_Indexes, operatorStack, outputQueue);
+  }
+
+  return deepCopy(outputQueue);
+}
+
+function fixStringFormatToTokenize(string, sybols_And_Indexes, operatorStack, atN){
+  // console.log(string)
+  string = string.replace(/ /g, "");
+  let sets = [];
+  let index = 0;
+
+  string = string.replace(/x/g, "(x)");
+  string = string.replace(/n/g, "(n)");
+  string = string.replace(/j/g, "(j)");
+
+
+  while(index < string.length){
+    let temp = "";
+    
+    while(string[index] == "-" || string[index] == "+"){
+      temp = temp.concat(string[index]);
+      index++;
+    }
+
+    if(temp != ""){
+      sets.push(temp)
+    }
+      
+    index++;
+  }
+
+  for(var i = 0; i < sets.length; i++){
+    string = string.replace(sets[i], getSign(sets[i]))
+  }
+
+  sets = [];
+  index = 0;
+
+  // console.log(string)
+
+  while(index < string.length){
+    let startIndex = undefined;
+
+    // console.log(index)
+
+    if(/\d/.test(string[index]) || string[index] == "."){
+      startIndex = index;
+    }
+    
+    while(/\d/.test(string[index]) || string[index] == "."){
+      index++;
+    }
+
+    if(!string[startIndex-1] && startIndex != undefined){
+      sets.push([startIndex, index])
+    }else if(string[startIndex-1] && startIndex != undefined && string[startIndex-1] != "(" && string[startIndex-2] != "("){
+      sets.push([startIndex, index])
+    }
+      
+    index++;
+  }
+
+  // console.log(sets)
+  for(var i = 0; i < sets.length; i++){
+    string = insertStringAt(sets[i][0]+i*2, string, "(")
+    string = insertStringAt(sets[i][1]+i*2+1, string, ")")
+  }
+
+  tokenization(string, sybols_And_Indexes, operatorStack, atN);
+}
+
+
+//you need to fix the issue with rasining something to a negative power fucks with the outcome
+function tokenization(string, sybols_And_Indexes, operatorStack, atN){
+  let index = 0;
+
+  while(index < string.length){  
+    let sub_String = string.substring(index);
+    let num = parseFloat(sub_String, 10);
+    // console.log(sub_String,num)
+
+    if(isNaN(num) == false && string[index] != " "){
+      sybols_And_Indexes.push({num:num, type:0});
+      let num_len = num.toString().length;
+
+      index += num_len;
+    }
+
+    for (var i = 0; i < SYBOL_LIST.length; i++) {
+      if(string[index] == SYBOL_LIST[i]){
+          sybols_And_Indexes.push({num:SYBOL_LIST[i], type:1});
+      }
+    }
+
+    if(string[index] == "x"){
+      sybols_And_Indexes.push({num: "x", type:0});
+    }
+    if(string[index] == "j"){
+      sybols_And_Indexes.push({num: "j", type:0});
+    }
+    if(string[index] == "n"){
+      sybols_And_Indexes.push({num: "n", type:0});
+    }
+
+    for(var i = 0; i < FUNC_LIST.length; i++){
+      let match = true;
+
+      for(var j = 0; j < FUNC_LIST[i].length; j++){
+        if(string[index+j] != FUNC_LIST[i][j]){
+          match = false;
+        }
+      }
+
+      if(match){
+        if(FUNC_LIST[i] == 'e'){
+          sybols_And_Indexes.push({num:'(', type:1});
+          sybols_And_Indexes.push({num:E, type:0});
+          sybols_And_Indexes.push({num:')', type:1});
+          index += FUNC_LIST[i].length-1;
+        }else if(FUNC_LIST[i] == 'pi'){
+          sybols_And_Indexes.push({num:'(', type:1});
+          sybols_And_Indexes.push({num:PI, type:0});
+          sybols_And_Indexes.push({num:')', type:1});
+          index += FUNC_LIST[i].length-1;
+        }else{
+          sybols_And_Indexes.push({num:FUNC_LIST[i], type:2});
+          index += FUNC_LIST[i].length-1;
+        }
+      }
+    }
+
+      index++;
+  }
+
+  //adds a mult sign in implicit situations
+  let saiI = 0;
+  while(saiI < sybols_And_Indexes.length){
+    if(sybols_And_Indexes[saiI+1] && sybols_And_Indexes[saiI].type == 0 && sybols_And_Indexes[saiI+1].num == "("){
+      insertAt(sybols_And_Indexes, saiI+1, [{num:'*', type:1}]);
+    }
+    if(sybols_And_Indexes[saiI+1] && sybols_And_Indexes[saiI].num == ")" && sybols_And_Indexes[saiI+1].num == "("){
+      insertAt(sybols_And_Indexes, saiI+1, [{num:'*', type:1}]);
+    }
+    if(sybols_And_Indexes[saiI+1] && sybols_And_Indexes[saiI].num == ")" && sybols_And_Indexes[saiI+1].type == 2){
+      insertAt(sybols_And_Indexes, saiI+1, [{num:'*', type:1}]);
+    }
+    if(sybols_And_Indexes[saiI+1] && sybols_And_Indexes[saiI].type == 0 && sybols_And_Indexes[saiI+1].type == 2){
+      insertAt(sybols_And_Indexes, saiI+1, [{num:'*', type:1}]);
+    }
+    if(sybols_And_Indexes[saiI+1] && sybols_And_Indexes[saiI].type == 0 && sybols_And_Indexes[saiI+1].type == 2){
+      insertAt(sybols_And_Indexes, saiI+1, [{num:'*', type:1}]);
+    }
+    //if there is a factorial
+    if(sybols_And_Indexes[saiI].num == "!" && sybols_And_Indexes[saiI-1].num == ")"){
+      let subTokens = [];
+      let subIndex = saiI-2;
+      let opens = 1;
+
+      //removes the factorial symbol
+      removeFromArray(sybols_And_Indexes,saiI);
+
+      //gets what the function inside the factorial 
+      while(sybols_And_Indexes[subIndex].num != "(" || opens != 1){
+        subTokens.push(sybols_And_Indexes[subIndex]);
+
+        if(sybols_And_Indexes[subIndex].num == ")"){
+          opens++;
+        }
+        if(sybols_And_Indexes[subIndex].num == "("){
+          opens--;
+        }
+
+        subIndex--;
+      }
+
+      //takes the function out of the factorial
+      for (var j = saiI-2; j >= subIndex+1; j--) {
+        removeFromArray(sybols_And_Indexes,j);
+      }
+
+      saiI = subIndex+1;
+
+      subTokens.reverse();
+
+      //adds the function n times with decending n's
+      for (var j = 0; j < atN; j++) {
+        if(j != atN-1){
+          insertAt(sybols_And_Indexes, saiI, [{num:'*', type:1}]);
+        }
+
+        insertAt(sybols_And_Indexes, saiI, [{num:')', type:1}]);
+
+        let nReplacedSubToken = deepCopy(subTokens);
+        for (var e = 0; e < nReplacedSubToken.length; e++) {
+          if(nReplacedSubToken[e].num == 'n'){
+            nReplacedSubToken[e] = {num:j+1, type:0}
+          }
+        }
+
+        insertAt(sybols_And_Indexes, saiI, nReplacedSubToken);
+        insertAt(sybols_And_Indexes, saiI, [{num:'(', type:1}]);
+        
+        saiI += 3 + nReplacedSubToken.length;
+      }
+
+    }
+
+    saiI++;
+  }
+
+
+  // let output = "";
+  // for (var i = 0; i < sybols_And_Indexes.length; i++) {
+  //   output += sybols_And_Indexes[i].num;
+  // }
+
+  // console.log(sybols_And_Indexes, output);
+
+}
+
+function setPrecedence(tokens){
+  for (var i = 0; i < tokens.length; i++) {
+    if(tokens[i].num == '+' || tokens[i].num == '-'){
+      tokens[i].prec = 0;
+    }
+    if(tokens[i].num == '*' || tokens[i].num == '/'){
+      tokens[i].prec = 1;
+    }
+    if(tokens[i].num == '^' || tokens[i].num == 'sqrt'){
+      tokens[i].prec = 2;
+    } 
+  }
+}
+
+
+function shuntingYard(tokens, operatorStack, outputQueue){
+  tokens = deepCopy(tokens)
+  for (var i = 0; i < tokens.length; i++) {
+    if(tokens[i].type == 0){
+      outputQueue.push(tokens[i]);
+    }  
+    if(tokens[i].type == 2){
+      operatorStack.push(tokens[i]);
+    } 
+
+    if(tokens[i].type == 1 && tokens[i].num != ')' && tokens[i].num != '('){
+      while(operatorStack.length > 0 && operatorStack[operatorStack.length-1].prec &&
+            operatorStack[operatorStack.length-1].prec >= tokens[i].prec){
+
+        outputQueue.push(operatorStack.pop());
+      }
+      operatorStack.push(tokens[i]);
+    }
+
+    if(tokens[i].num == '('){
+        operatorStack.push(tokens[i]);
+    }
+    if(tokens[i].num == ')'){
+      while(operatorStack.length > 0 && operatorStack[operatorStack.length-1].num != '('){
+        outputQueue.push(operatorStack.pop());
+      }
+
+      if(operatorStack[operatorStack.length-1].num == "("){
+        operatorStack.pop();
+      }
+      
+      if(operatorStack.length > 0 && operatorStack[operatorStack.length-1].type == 2){
+        outputQueue.push(operatorStack.pop());
+      }
+    }
+  }
+
+  while(operatorStack.length > 0){
+    if(operatorStack[operatorStack.length-1].num == '(' || operatorStack[operatorStack.length-1].num == ')'){
+      operatorStack.pop();
+    }else{
+      outputQueue.push(operatorStack.pop());
+    }
+  }
+
+  // console.log(outputQueue)
+
+}
+
+function eval(reversePolishNotation, atN, x){
+
+  let stack = [];
+
+  let rpn = deepCopy(reversePolishNotation);
+
+  for (var i = 0; i < rpn.length; i++) {
+    if(rpn[i].num == "x"){
+      rpn[i].num = x;
+    }
+    if(rpn[i].num == "j"){
+      rpn[i].num = t;
+    }
+    if(rpn[i].num == "n"){
+      rpn[i].num = atN;
+    }
+  }
+
+  for (var i = 0; i < rpn.length; i++) {
+    if(rpn[i+1] && rpn[i].num == '-' &&  /\+|-|\*|\/|\^/.test(rpn[i+1].num)){
+      rpn.splice(i, 1);
+      rpn[i-1].num *= -1;
+    }
+  }
+
+  // console.log(rpn)
+
+  for (var i = 0; i < rpn.length; i++) {
+    // console.log(stack[0],stack[1],rpn[i])
+
+    if(rpn[i].type == 0){
+      stack.push(rpn[i]);
+    }
+    if(rpn[i].type == 1 && stack[stack.length-1]){
+      let right = stack.pop();
+      let left = stack.pop();
+
+      if(rpn[i].num == '+'){
+        if(left == undefined){
+          stack.push({num:right.num, type:0});
+        }else{
+          stack.push({num:left.num + right.num, type:0});
+        }
+      }
+      if(rpn[i].num == '-'){
+        if(left == undefined){
+          stack.push({num:-1 * right.num, type:0});
+        }else{
+          stack.push({num:left.num - right.num, type:0});
+        }
+      }
+      if(rpn[i].num == '*' && left){
+        stack.push({num:left.num * right.num, type:0});
+      }
+      if(rpn[i].num == '/' && left){
+        stack.push({num:left.num / right.num, type:0});
+      }
+      if(rpn[i].num == '^' && left){
+        let output = {num:Math.pow(left.num, right.num), type:0};
+        stack.push(output);
+      }
+    }
+    if(rpn[i].type == 2 && stack[stack.length-1]){
+      let right = stack.pop();
+
+      if(rpn[i].num == 'sqrt'){
+        stack.push({num:Math.sqrt(right.num), type:0});
+      }
+      if(rpn[i].num == 'cos'){
+        stack.push({num:Math.cos(right.num), type:0});
+      }
+      if(rpn[i].num == 'sin'){
+        stack.push({num:Math.sin(right.num), type:0});
+      }
+      if(rpn[i].num == 'tan'){
+        stack.push({num:Math.tan(right.num), type:0});
+      }
+      if(rpn[i].num == 'sec'){
+        stack.push({num:1/Math.cos(right.num), type:0});
+      }
+      if(rpn[i].num == 'csc'){
+        stack.push({num:1/Math.sin(right.num), type:0});
+      }
+      if(rpn[i].num == 'cot'){
+        stack.push({num:1/Math.tan(right.num), type:0});
+      }
+      if(rpn[i].num == 'abs'){
+        stack.push({num:Math.abs(right.num), type:0});
+      }
+      if(rpn[i].num == 'arctan'){
+        stack.push({num:Math.atan(right.num), type:0});
+      }
+      if(rpn[i].num == 'arcsin'){
+        stack.push({num:Math.asin(right.num), type:0});
+      }
+      if(rpn[i].num == 'arccos'){
+        stack.push({num:Math.acos(right.num), type:0});
+      }
+      if(rpn[i].num == 'ln'){
+        stack.push({num:Math.log(right.num), type:0});
+      }
+    }
+  }
+
+  if(stack[0]){
+    return stack[0].num;
+  }else{
+    return undefined;
+  }
+  
+}
+
+function getSign(string){
+  let numNegs = 0;
+
+  for (var i = 0; i < string.length; i++) {
+    if(string[i] == "-"){
+      numNegs++;
+    }
+  }
+
+  if(numNegs % 2 == 0){
+    return "+"
+  }else{
+    return "-"
+  }
+}
+
+
+
+  
+</script>
+    <script>function getSubShapes(graph){
+    if(graph.prevEquation != graph.equation || graph.prevN != n || graph.prevArea != graph.area){
+      graph.prevEquation = graph.equation;
+      graph.prevN = n;
+      graph.prevArea = graph.area;
+      graph.outputQueue = parse(graph.equation, n);
+    }else{
+      return;
+    }
+
+    graph.subShapes = [];
+    graph.subShapes.push(graph.shape);
+
+
+    if(graph.shape.type == "rect"){
+      
+      for (var i = 1; i < n+1; i++) {
+        let areaOfShapeAtN = graph.func(i);
+        let shapes = getSubShapesRect(areaOfShapeAtN, graph.subShapes, graph);
+
+        if(shapes == 1){
+          graph.full = true;
+          break;
+        }
+        graph.full = false;
+
+        for (var j = 0; j < shapes.length; j++) {
+          graph.subShapes.push(shapes[0]);
+        }
+        
+      }
+    }
+}
+
+
+//getting the subshape is going to tell us if we are over the limit 
+//area or give us a shape that is going to fit inside the graph of shapes laid previosly
+function getSubShapesRect(area, subShapes, graph){
+  let shape = subShapes[0];
+  let outcome = [];
+
+  if(subShapes.length == 1){
+    outcome = getShapeFromEmptyRects(area, subShapes, graph);
+    return outcome;
+  }
+
+  let shapesToAnalyse = deepCopy(subShapes);
+
+  for (var i = 1; i < subShapes.length; i++) {
+    
+    let scanArea;
+    let shapesInScanArea;
+    let linesToAnalyseX = [];
+    let linesToAnalyseY = [];
+
+    //S /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    scanArea = new Rectangle(subShapes[i].x1, subShapes[i].y2, subShapes[i].x2, subShapes[i].y2+graph.area);
+    shapesInScanArea = getSquaresInSquare(subShapes[i], shapesToAnalyse, scanArea, 1);
+
+    linesToAnalyseY = [];
+
+    for (var j = 0; j < shapesInScanArea.length; j++) {
+      //south line
+      linesToAnalyseY.push(
+      new LineSegment(scanArea.x1, shapesInScanArea[j].y2,scanArea.x2, shapesInScanArea[j].y2));
+
+        if(j != 0){
+          //north line
+          linesToAnalyseY.push(
+            new LineSegment(scanArea.x1,shapesInScanArea[j].y1, scanArea.x2,shapesInScanArea[j].y1));
+        }
+    }
+
+    linesToAnalyseY.sort(function(a, b){return a.y1 - b.y1});
+    scanArea.y2 = linesToAnalyseY[0].y1;
+
+    if(scanArea.y2 != subShapes[i].y2){
+      outcome.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+      shapesToAnalyse.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+    }
+
+    // //E /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    scanArea = new Rectangle(subShapes[i].x2, subShapes[i].y1, subShapes[i].x2+graph.area, subShapes[i].y2);
+    shapesInScanArea = getSquaresInSquare(subShapes[i], shapesToAnalyse, scanArea, 0);
+
+    linesToAnalyseX = [];
+
+    for (var j = 0; j < shapesInScanArea.length; j++) {
+        //east line
+          linesToAnalyseX.push(
+          new LineSegment(shapesInScanArea[j].x2, scanArea.y1,shapesInScanArea[j].x2, scanArea.y2));
+
+        if(j != 0){
+          //west line
+          linesToAnalyseX.push(
+            new LineSegment(shapesInScanArea[j].x1,scanArea.y1, shapesInScanArea[j].x1,scanArea.y2));
+        }
+    }   
+
+    linesToAnalyseX.sort(function(a, b){return a.x1 - b.x1});
+    scanArea.x2 = linesToAnalyseX[0].x1;
+
+    if(scanArea.x2 != subShapes[i].x2){
+      outcome.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+      shapesToAnalyse.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+    }
+
+
+    // // N /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    scanArea = new Rectangle(subShapes[i].x1, subShapes[i].y1-graph.area, subShapes[i].x2, subShapes[i].y1);
+    shapesInScanArea = getSquaresInSquare(subShapes[i], shapesToAnalyse, scanArea, 1);
+
+
+    linesToAnalyseY = [];
+
+    for (var j = 0; j < shapesInScanArea.length; j++) {
+      //north line
+      linesToAnalyseY.push(
+        new LineSegment(scanArea.x1,shapesInScanArea[j].y1, scanArea.x2,shapesInScanArea[j].y1));
+
+        if(j != 0){
+          //south line
+           linesToAnalyseY.push(
+           new LineSegment(scanArea.x1, shapesInScanArea[j].y2,scanArea.x2, shapesInScanArea[j].y2));
+        }
+    }
+
+    linesToAnalyseY.sort(function(a, b){return b.y1 - a.y1});
+    scanArea.y1 = linesToAnalyseY[0].y1;
+
+    if(scanArea.y1 != subShapes[i].y1){
+      outcome.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+      shapesToAnalyse.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+    }
+
+    //  //W /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    scanArea = new Rectangle(subShapes[i].x1-graph.area, subShapes[i].y1, subShapes[i].x1, subShapes[i].y2);
+    shapesInScanArea = getSquaresInSquare(subShapes[i], shapesToAnalyse, scanArea, 0);
+
+    linesToAnalyseX = [];
+
+    for (var j = 0; j < shapesInScanArea.length; j++) {
+        //west line
+          linesToAnalyseX.push(
+            new LineSegment(shapesInScanArea[j].x1,scanArea.y1, shapesInScanArea[j].x1,scanArea.y2));
+
+        if(j != 0){
+          //east line
+          linesToAnalyseX.push(
+          new LineSegment(shapesInScanArea[j].x2, scanArea.y1,shapesInScanArea[j].x2, scanArea.y2));
+        }
+    }   
+
+
+    linesToAnalyseX.sort(function(a, b){return b.x1 - a.x1});
+    scanArea.x1 = linesToAnalyseX[0].x1;
+
+    if(scanArea.x1 != subShapes[i].x1){
+      outcome.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+      shapesToAnalyse.push(new Rectangle(scanArea.x1, scanArea.y1, scanArea.x2, scanArea.y2))
+    }
+  }
+
+  outcome = getShapeFromEmptyRects(area, outcome, graph);
+
+  return outcome;
+}
+
+
+function getShapeFromEmptyRects(area, empySubShapes, graph){
+  //go through shapes and fill them until the 
+
+  let areaOfShapes = 0;
+
+  for (var i = 0; i < empySubShapes.length; i++) {
+    areaOfShapes += empySubShapes[i].a;
+  }
+
+
+  if(area > areaOfShapes){
+    console.log("FULL")
+    return 1;
+  }
+
+  let runningArea = area;
+  let shapes = [];
+
+
+  for (var i = 0; i < empySubShapes.length; i++) {
+
+    if(empySubShapes[i].a < runningArea){
+      shapes.push(empySubShapes[i]);
+      runningArea -= empySubShapes[i].a;
+      continue;
+    }
+
+    if(graph.subShapes.length % 4 == 2){
+      shapes.push(new Rectangle(empySubShapes[i].x2-(runningArea/empySubShapes[i].h), empySubShapes[i].y1, empySubShapes[i].x2, empySubShapes[i].y2, graph.secondaryColor));
+    }else if(graph.subShapes.length % 4 == 3){
+      shapes.push(new Rectangle(empySubShapes[i].x1, empySubShapes[i].y2-(runningArea/empySubShapes[i].w), empySubShapes[i].x2, empySubShapes[i].y2, graph.secondaryColor));
+    }else if(graph.subShapes.length % 4 == 0){
+      shapes.push(new Rectangle(empySubShapes[i].x1, empySubShapes[i].y1, empySubShapes[i].x1+(runningArea/empySubShapes[i].h), empySubShapes[i].y2, graph.secondaryColor));
+    }else{
+      shapes.push(new Rectangle(empySubShapes[i].x1, empySubShapes[i].y1, empySubShapes[i].x2, empySubShapes[i].y1+(runningArea/empySubShapes[i].w), graph.secondaryColor));
+    }
+
+    break;
+  }
+
+  return shapes;
+
+}
+
+
+function getSquaresInSquare(square, squares, scanArea, type){
+  let intersectingSquares = [];
+
+  for (var j = 0; j < squares.length; j++) {
+    if(square.id == squares[j].id){
+      continue; 
+    }
+
+    if(scanArea.intersectionRect(squares[j], type)){
+      intersectingSquares.push(squares[j]);
+    }
+  }
+
+  return intersectingSquares;
+}
+
+
+// or (var j = 0; j < shapesInScanArea.length; j++) {
+    //     //west line
+    //     linesToAnalyseX.push(
+    //       new LineSegment(shapesInScanArea[j].x,scanArea.y, shapesInScanArea[j].x,scanArea.y+scanArea.h));
+
+    //     if(j != 0){
+    //       //east line
+    //       linesToAnalyseX.push(
+    //       new LineSegment(shapesInScanArea[j].x+shapesInScanArea[j].w, scanArea.y,
+    //                       shapesInScanArea[j].x+shapesInScanArea[j].w, scanArea.y+scanArea.h));
+    //     }
+    // }   
+
+    // linesToAnalyseX.sort(function(a, b){return b.x1 - a.x1});
+    // scanArea.x = linesToAnalyseX[0].x1;
+    // scanArea.w = scanArea.x - subShapes[i].x;
+    // shapesInScanArea = getSquaresInSquareY(subShapes[i], shapesToAnalyse, scanArea);
+
+    // if(scanArea.w == 0){
+    //   shapesInScanArea = [];
+    // }
+
+</script>
+    <script>//graph constants
+const HEIGHT_OF_MARKS = 10;
+const NUM_MARKS = 10;
+
+//graph vars
+var zoom = 0.001;
+var offX = 0;
+var offY = 0;
+var t = 0;
+var n = 0;
+var globalIdCounter = 0;
+
+var xMarksPos;
+var yMarksPos;
+
+function drawGraph(){   
+    colorRect(-canvas.width, -canvas.height, canvas.width*2, canvas.height*2,  'rgb(18,18,18)');
+
+    handleMouseInput();
+
+    drawXYAxis();
+
+    
+    drawGraphs();
+    getGraphs();
+
+    drawNumberMarks(xMarksPos, yMarksPos);
+
+    drawCrosshair();
+
+    t += 0.01;
+}
+
+function drawXYAxis(){
+    let zoom_rangeslider = document.getElementById("zoom");
+    zoom = zoom_rangeslider.value;
+
+    //X Markers
+    xMarksPos = getPosOfMarkers(zoom, canvas.width, offX);
+    for (var i = 0; i < xMarksPos.length; i++) {
+
+        //draw graph mark
+        drawLine(xMarksPos[i]/zoom * canvas.width + offX * canvas.width/zoom,
+                 -canvas.height,
+                 xMarksPos[i]/zoom * canvas.width + offX * canvas.width/zoom,
+                 canvas.height, 2, 'rgba(18,18,100,0.5)');
+
+        //draw hash mark
+        drawLine(xMarksPos[i]/zoom * canvas.width + offX * canvas.width/zoom,
+                 HEIGHT_OF_MARKS + offY * canvas.height/zoom,
+                 xMarksPos[i]/zoom * canvas.width + offX * canvas.width/zoom,
+                 -HEIGHT_OF_MARKS + offY * canvas.height/zoom, 
+                 2, 'rgba(255,255,255,0.5)');
+    }
+
+    //Y Markers
+    yMarksPos = getPosOfMarkers(zoom, canvas.height, offY);
+    for (var i = 0; i < yMarksPos.length; i++) {
+
+        //draw graph mark
+        drawLine(-canvas.width/2,
+                yMarksPos[i]/zoom * canvas.height+offY * canvas.height/zoom,
+                canvas.width/2,
+                yMarksPos[i]/zoom * canvas.height+offY * canvas.height/zoom, 
+                2, 'rgba(18,18,100,0.5)');
+
+        //draw hash mark
+        drawLine(HEIGHT_OF_MARKS + offX * canvas.width/zoom,
+                yMarksPos[i]/zoom * canvas.height+offY * canvas.height/zoom,
+                -HEIGHT_OF_MARKS + offX * canvas.width/zoom,
+                yMarksPos[i]/zoom * canvas.height+offY * canvas.height/zoom, 
+                2, 'rgba(255,255,255,0.5)');
+    }
+
+
+    //Axis
+    drawLine(-canvas.width/2,offY * canvas.height/zoom,canvas.width/2,offY * canvas.height/zoom,2,'rgba(255,255,255,0.5)');
+    drawLine(offX * canvas.width/zoom,-canvas.height/2,offX * canvas.width/zoom,canvas.height/2,2,'rgba(255,255,255,0.5)');
+
+    //Border
+    drawLine(-canvas.width/2,-canvas.height/2,canvas.width/2,-canvas.height/2,'rgba(255,255,255,0.5)');
+    drawLine(canvas.width/2,-canvas.height/2,canvas.width/2,canvas.height/2,'rgba(255,255,255,0.5)');
+    drawLine(canvas.width/2,canvas.height/2,-canvas.width/2,canvas.height/2,'rgba(255,255,255,0.5)');
+    drawLine(-canvas.width/2,-canvas.height/2,-canvas.width/2,canvas.height/2,'rgba(255,255,255,0.5)');
+}
+
+function drawNumberMarks(xPos, yPos){
+        for (var i = 0; i < yPos.length; i++) {
+            let height = 6;
+            let width = canvasContext.measureText(-yPos[i].toFixed(3)).width;
+            drawText("white", -yPos[i].toFixed(4), -canvas.width/2+width/2, 
+                     yPos[i]/zoom * canvas.height+offY * canvas.height/zoom+height/2)
+            drawText("white", -yPos[i].toFixed(4), canvas.width/2-width*1.5, 
+                     yPos[i]/zoom * canvas.height+offY * canvas.height/zoom+height/2)
+        }
+
+        //Drawing X numbers here so that the graph makrks for the Y coords dont cross out the numbers
+        for (var i = 0; i < xPos.length; i++) {
+            // draw numbers 
+            let width = canvasContext.measureText(xPos[i].toFixed(3)).width;
+            drawText("white", (-xPos[i].toFixed(4)*-1),xPos[i]/zoom * canvas.width + offX * canvas.width/zoom - width/2,
+                     canvas.height/2-3)
+            drawText("white", (-xPos[i].toFixed(4)*-1),xPos[i]/zoom * canvas.width + offX * canvas.width/zoom - width/2,
+                     -canvas.height/2+9)
+        }
+}
+
+
+function drawCrosshair(){
+    drawLine(-HEIGHT_OF_MARKS/2,0,HEIGHT_OF_MARKS/2,0,2,'rgba(255,255,255,0.75)');
+    drawLine(0,-HEIGHT_OF_MARKS/2,0,HEIGHT_OF_MARKS/2,2,'rgba(255,255,255,0.75)');
+    drawText('yellow', (-offX).toFixed(3) + ", " + (offY).toFixed(3), 3, -4)
+}
+
+</script>
+    <script>var graphs = [];
+var graphCount = 0;
+
+function getGraphs(){
+  var zoom_rangeslider = document.getElementById("zoom");
+  zoom = Number.parseFloat(zoom_rangeslider.value);
+
+  var n_rangeslider = document.getElementById("n");
+  n = parseInt(n_rangeslider.value);
+
+  document.getElementById("nIsEqualTo").innerText = "n = " + n;
+
+  for (var i = 0; i < graphs.length; i++) {
+    graphs[i].index = i;
+  }
+
+  for (var i = 0; i < graphs.length; i++) {
+    graphs[i].equation = document.getElementById(graphs[i].elem + "form").value;
+    // graphs[i].equation = "1 / (2^n)";
+
+    graphs[i].area = Number.parseFloat(document.getElementById(graphs[i].elem + "areaForm").value);
+    graphs[i].sideLen = Math.sqrt(graphs[i].area);
+    graphs[i].shape = new Rectangle(-graphs[i].sideLen/2, -graphs[i].sideLen/2, graphs[i].sideLen/2, graphs[i].sideLen/2, graphs[i].color);
+
+    graphs[i].getSubShapes();
+  }
+}
+
+function drawGraphs(){
+  for (var i = 0; i < graphs.length; i++) {
+    graphs[i].draw();
+  }
+}
+
+
+function Graph(){
+  this.equation = "";
+  this.prevEquation = "";
+  this.prevN = n;
+  this.prevArea;
+  this.elem = "graph" + graphCount;
+  this.index = graphs.length;
+
+  
+  this.subShapes = [];
+  this.area = 1;
+  this.sideLen = Math.sqrt(this.area);
+  this.full = false;
+
+  this.outputQueue = [];
+  this.color = getRGB(1);
+  this.secondaryColor = getRGB(0.65);
+
+  this.shape = new Rectangle(-this.sideLen/2, -this.sideLen/2, this.sideLen/2, this.sideLen/2, this.secondaryColor);
+
+  graphCount++;
+
+  this.draw = function(){
+    if(this.area == undefined){
+      return;
+    }
+
+    this.shape.draw(false);
+
+    if(this.equations == ""){
+      return;
+    }
+    
+    for (var i = 1; i < this.subShapes.length; i++) {
+      this.subShapes[i].draw(true);
+    }
+  }
+
+  this.getSubShapes = function(){
+    if(isNaN(this.area)){
+      this.subShapes = [];
+      return;
+    }
+
+    if(this.equation == ""){
+      this.subShapes = [this.shape];
+      return;
+    }
+    
+    getSubShapes(this);
+
+    if(this.full){
+      for (var i = 0; i < this.subShapes.length; i++) {
+        this.subShapes[i].color = this.color;
+      }
+    }
+  }
+
+  this.func = function(n, x){
+    let y = eval(this.outputQueue, n, x);
+    return y;
+  }
+
+  InitNewGraphHTML(this);
+}
+
+function InitNewGraphHTML(graph){
+  // console.log(graph)
+  let divElement = document.createElement("Div");
+    divElement.id = graph.elem;
+    divElement.style.marginBottom = "5px";
+    divElement.style.marginTop = "5px";
+  document.getElementById("form-group").appendChild(divElement)
+
+  let deleteElem = document.createElement("Button");
+    deleteElem.id = "button"
+    deleteElem.innerHTML = "X";
+    deleteElem.style.fontSize = "10px";
+    deleteElem.style.border = "2px solid red";
+    deleteElem.style.width = "10%";
+    deleteElem.style.margin = "5px";
+    deleteElem.style.color = "white";
+    deleteElem.style.background = "red";
+
+    deleteElem.addEventListener("mousedown", function(){
+      if(graphs.length > 1){
+        document.getElementById(graph.elem).remove();
+        removeFromArray(graphs,graph.index)
+      }
+    });
+  document.getElementById(graph.elem).appendChild(deleteElem)
+
+  let fOfXEquals = document.createElement("Span");
+    fOfXEquals.id = "fOfXEquals"
+    fOfXEquals.innerHTML = "<span>∑n→∞</span>";
+    fOfXEquals.style.color = "white";
+    fOfXEquals.style.width = "30px";
+    fOfXEquals.style.margin = "0px";
+    fOfXEquals.style.padding = "0px";
+    fOfXEquals.style.boarder = "5px";
+    fOfXEquals.style.textdecoration = "none";
+  document.getElementById(graph.elem).appendChild(fOfXEquals)
+
+  let inputElement = document.createElement("Input");
+    inputElement.id = graph.elem + "form";
+    inputElement.style.color = "white";
+    inputElement.style.textdecoration = "none";
+    inputElement.style.cursor = "text";
+    inputElement.style.width = "90%";
+    inputElement.style.border = "2px solid " + graph.color;
+  document.getElementById(graph.elem).appendChild(inputElement)
+
+  let area = document.createElement("Span");
+    area.id = "area"
+    area.innerHTML = "<span>Input Area:</span>";
+    area.style.color = "white";
+    area.style.width = "30px";
+    area.style.margin = "0px";
+    area.style.margin = "0px";
+    area.style.boarder = "5px";
+    area.style.textdecoration = "none";
+  document.getElementById(graph.elem).appendChild(area)
+
+  let areaInputElement = document.createElement("Input");
+    areaInputElement.id = graph.elem + "areaForm";
+    areaInputElement.style.color = "white";
+    areaInputElement.style.textdecoration = "none";
+    areaInputElement.style.cursor = "text";
+    areaInputElement.style.width = "90%";
+    areaInputElement.style.border = "2px solid " + graph.color;
+  document.getElementById(graph.elem).appendChild(areaInputElement)
+
+}
+
+// ∫f(x)dx
+// d/dx
+//∑n→∞
+
+//to get from real to screen
+//(x / zoom) * canvas.width + offX * canvas.width/zoom
+
+</script>
+    <script>// Mouse Input
+var mouseX;
+var mouseY;
+var mouseDown = false;
+
+var numFramesAfterClick = 0;
+var lastMousePoint = {x:undefined, y:undefined};
+let prevMousePoint = {x:undefined, y:undefined};
+
+function updateMousePos(evt) {
+  var rect = canvas.getBoundingClientRect();
+  var root = document.documentElement;
+
+  mouseX = (evt.clientX - rect.left) - canvas.width/2;
+  mouseY = (evt.clientY - rect.top) - canvas.height/2;
+}
+
+function setMouseDown(evt){
+  if(mouseY > -canvas.height/2 && mouseY < canvas.height/2 
+    && mouseX > -canvas.width/2 && mouseX < canvas.width/2){
+    evt.preventDefault();
+  }
+
+  if(evt.changedTouches && evt.changedTouches[0]){
+    mouseX = evt.changedTouches[0].pageX - canvasOffSets.left - canvas.width/2;
+    mouseY = evt.changedTouches[0].pageY - canvas.height/2;
+  }
+
+  mouseDown = true;
+}
+
+function setMouseUp(evt){
+  if(mouseX > canvasOffSets.left && mouseX < canvasOffSets.right &&
+     mouseY > canvasOffSets.top && mouseY < canvasOffSets.bottom){
+    evt.preventDefault();
+  } 
+  
+  mouseDown = false;
+  numFramesAfterClick = 0;
+}
+
+function touchMove(evt){
+  if(mouseY > -canvas.height/2 && mouseY < canvas.height/2 
+    && mouseX > -canvas.width/2 && mouseX < canvas.width/2){
+    evt.preventDefault();
+  } 
+
+  if(evt.changedTouches && evt.changedTouches[0]){
+    mouseX = evt.changedTouches[0].pageX - canvasOffSets.left - canvas.width/2;
+    mouseY = evt.changedTouches[0].pageY - canvas.height/2;
+  }
+
+  mouseDown = true;
+}
+
+document.addEventListener('mousemove', updateMousePos);
+document.addEventListener('mousedown', setMouseDown);
+document.addEventListener('mouseup', setMouseUp);
+//the { passive: false } makes it so that the window will not scroll with the users movement
+//it will also get rid of the touch delay on mobile devices 
+document.addEventListener('touchstart', setMouseDown, { passive: false });
+document.addEventListener('touchend', setMouseUp, { passive: false });
+document.addEventListener('touchmove', touchMove, { passive: false });
+
+function handleMouseInput(){
+
+  if(mouseDown 
+    && mouseY > -canvas.height/2 && mouseY < canvas.height 
+    && mouseX > -canvas.width/2 && mouseX < canvas.width){
+
+    if(numFramesAfterClick == 0){
+      lastMousePoint.x = mouseX;
+      lastMousePoint.y = mouseY;
+      prevMousePoint.x = mouseX;
+      prevMousePoint.y = mouseY;
+    }else{
+      if(mouseX != prevMousePoint.x){
+        let dx = mouseX - prevMousePoint.x;
+        offX += dx * zoom/canvas.width;
+      }
+      if(mouseY != prevMousePoint.y){
+        let dy = mouseY - prevMousePoint.y;
+        offY += dy * zoom/canvas.height;
+      }
+
+      prevMousePoint.x = mouseX;
+      prevMousePoint.y = mouseY;
+    }
+
+    numFramesAfterClick++; 
+  }
+}
+
+function circlePointColision(x1,y1,r, x2,y2){
+  let dist = distanceOfTwoPoints(x1, y1, x2, y2);
+
+  return dist < r;
+}
+
+</script>
+
+  </div>
+
+</body>
+</hmtl>
+
+

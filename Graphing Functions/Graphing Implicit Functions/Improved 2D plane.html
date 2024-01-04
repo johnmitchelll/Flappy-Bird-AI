@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+  <title>Graphing Implicit Equations</title>
+  <link rel="icon" href="./icon.png" />
+</head>
+
+<style>
+  *{
+    margin:0;
+    padding: 0;
+    background: #121212 ;
+    align-content: center;
+  }
+
+  #block {
+    display: flex;
+    height: 100vh;
+  }
+
+  #gameCanvas {
+    margin: auto;
+  }
+
+  .rangeslider{
+    width: 200px;
+    font-size: 12px;
+    background-color: rgba(255, 255, 255, 0);
+    padding: 15px;
+    border: ridge 0.5px white;
+    
+
+  }
+
+  .slider {
+    -webkit-appearance: none;
+    background: #5B5B5B  ;
+    width: 100%;
+    height: 20px;
+    opacity: 2;
+    padding: 2px;
+   }
+
+   .slider:hover {
+    opacity: 1;
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    cursor: pointer;
+    background: #0000FF ;
+    width: 5%;
+    height: 22px;
+  }
+
+  .zoomPadding {
+    width: fit-content;
+    color: white;
+    margin: auto;
+    margin-top: 2px;
+    margin-bottom: 10px;
+
+    /*doesnt let them become highlighted in any browser*/
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -webkit-touch-callout : none
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+  }
+
+  
+
+</style>
+
+<body>
+
+  <div id="block">
+    <div class="rangeslider">
+      <input type="range" min="2" max="500" value="5"
+                     class="slider" id="zoom">
+
+      <div class="zoomPadding">
+        <p>Zoom</p>
+      </div>
+
+      <input type="range" min="0" max="1000" value="100"
+                     class="slider" id="time">
+
+      <div class="zoomPadding">
+        <p>Time Speed</p>
+      </div>
+
+      <div class="zoomPadding" id="FPS">FPS: 0</div>
+
+    </div>
+
+    <canvas id="gameCanvas" width="600" height="700"></canvas>
+
+    <script src="js/Main.js"></script>
+    <script src="js/Helpers.js"></script>
+    <script src="js/Graphics.js"></script>
+    <script src="js/Particle.js"></script>
+    <script src="js/Input.js"></script>
+
+    
+
+  </div>
+
+</body>
+</hmtl>
+
+

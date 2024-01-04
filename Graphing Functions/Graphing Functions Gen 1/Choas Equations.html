@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+  <title>Choas Equation</title>
+</head>
+
+<style>
+  *{
+    margin:0;
+    padding: 0;
+    background: #121212 ;
+  }
+
+  .rangeslider{
+    width: 200px;
+    position: absolute;
+    left: 5%;
+    top: 5%;
+    font-size: 12px;
+
+    background-color: rgba(255, 255, 255, 0);
+  }
+
+  .slider {
+    -webkit-appearance: none;
+    background: #5B5B5B  ;
+    width: 100%;
+    height: 20px;
+    opacity: 2;
+    padding: 2px;
+   }
+
+   .slider:hover {
+    opacity: 1;
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    cursor: pointer;
+    background: #0000FF ;
+    width: 5%;
+    height: 22px;
+  }
+
+  .zoomPadding {
+    width: fit-content;
+    color: white;
+    margin: auto;
+    margin-top: 2px;
+  }
+
+  
+</style>
+
+<body>
+<div class="rangeslider">
+  <input type="range" min="1" max="500" value="15"
+                 class="slider" id="zoom">
+  <div class="zoomPadding">
+    <p>Zoom</p>
+  </div>
+</div>
+
+<canvas id="gameCanvas" width="600" height="700"></canvas>
+
+<script src="js/Main.js"></script>
+<script src="js/Graphics.js"></script>
+<script src="js/Particle.js"></script>
+
+
+</body>
+</hmtl>
+
+
