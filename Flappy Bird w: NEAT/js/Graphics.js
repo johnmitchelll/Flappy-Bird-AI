@@ -11,20 +11,7 @@ function drawEverything (){
     walls[i].show('green');
   }
 
-    // for (let i = 0; i < population.balls.length; i++) {
-    //   if(population.balls[i].dead == false){
-    //     population.balls[i].payingAttentionTo.show('purple');
-    //     break;
-    //   }
-    // }
-
-    // for (let i = 0; i < population.balls.length; i++) {
-    //   if(population.balls[i].dead == false){
-    //     population.balls[i].nextWall.show('blue');
-    //     break;
-    //   }
-    // }
-    
+  // population.payingAttentionTo.show('purple');
     
     population.update();
     population.show();

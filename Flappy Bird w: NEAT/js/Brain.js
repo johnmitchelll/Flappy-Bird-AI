@@ -13,7 +13,7 @@ function Brain(){
 
 
 	// add all other nodes besides output
-	for (var i = 0; i < 3; i++) {
+	for (var i = 0; i < 5; i++) {
 		for (var j = 0; j < this.layers.length-1; j++) {
 			this.layers[j].push(new BrainNode(0, i));
 		}
@@ -80,52 +80,17 @@ function Brain(){
 
 
 					let conectionWeight = this.layers[i][j].outwardConnections[e].weight
-
-					if(population.bestScore < 500){
-						if(seed < 0.3){
-							if(Math.random() > 0.5){	
-								this.layers[i][j].outwardConnections[e].weight += 0.03;
-							}else{
-								this.layers[i][j].outwardConnections[e].weight -= 0.03;
-							}
+					if(seed < 0.3){
+						if(Math.random() > 0.5){	
+							this.layers[i][j].outwardConnections[e].weight += 0.03;
 						}else{
-							this.layers[i][j].outwardConnections[e].weight = randomIntFromInterval(-1, 1);
+							this.layers[i][j].outwardConnections[e].weight -= 0.03;
 						}
-					}else if(population.bestScore < 1000){
-						if(seed < 0.75){
-							if(Math.random() > 0.5){	
-								this.layers[i][j].outwardConnections[e].weight += 0.01;
-							}else{
-								this.layers[i][j].outwardConnections[e].weight -= 0.01;
-							}
-						}else{
-							this.layers[i][j].outwardConnections[e].weight = randomIntFromInterval(-1, 1);
-						}
+					}else if(seed < 0.6){
+						this.layers[i][j].outwardConnections[e].weight = randomIntFromInterval(Math.min(-1, conectionWeight-0.1), Math.max(1, conectionWeight+0.1));
 					}else{
-						if(seed < 0.75){
-							if(Math.random() > 0.5){	
-								this.layers[i][j].outwardConnections[e].weight += 0.005;
-							}else{
-								this.layers[i][j].outwardConnections[e].weight -= 0.005;
-							}
-						}else{
-							this.layers[i][j].outwardConnections[e].weight = randomIntFromInterval(-1, 1);
-						}
+						this.layers[i][j].outwardConnections[e].weight = 0;
 					}
-
-
-					
-					// if(seed < 0.5){
-					// 	if(Math.random() > 0.3){	
-					// 		this.layers[i][j].outwardConnections[e].weight += 0.02;
-					// 	}else if(Math.random() > 0.3){
-					// 		this.layers[i][j].outwardConnections[e].weight -= 0.02;
-					// 	}
-					// }else if(seed < 0.75){
-					// 	this.layers[i][j].outwardConnections[e].weight = randomIntFromInterval(Math.min(-1, conectionWeight-0.2), Math.max(1, conectionWeight+0.2));
-					// }else{
-					// 	this.layers[i][j].outwardConnections[e].weight = randomIntFromInterval(-1, 1);
-					// }
 				}
 			}
 		}
