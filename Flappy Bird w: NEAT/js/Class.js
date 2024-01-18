@@ -1,4 +1,4 @@
-const WALL_GAP = 400;
+const WALL_GAP = 350;
 var wall_speed = 4;
 
 function moveWalls(){
@@ -8,14 +8,17 @@ function moveWalls(){
       walls[i-1] = walls[i];
     }
     walls[walls.length-1] = new Wall();
-    population.payingAttentionTo = walls[0];
-    population.nextWall = walls[1];
+
+    for (let i = 0; i < population.balls.length; i++) {
+      population.balls[i].payingAttentionTo = walls[0];
+      population.balls[i].nextWall = walls[1];
+    }
   }
 
   wall_speed += 0.01;
 
-  if(wall_speed >  25){
-    wall_speed = 25;
+  if(wall_speed > 7){
+    wall_speed = 7;
   }
 
   if(population.allDead == false){
@@ -56,18 +59,21 @@ function Wall(color){
 
 const GRAV = 1.2;
 
-function Ball(){
+function Ball(id){
   this.x = walls[0].w + 120*(Math.random()-0.5);
   this.y = canvas.height/2;
   this.r = 15;
   this.vel =  0;
   this.acc = 0;
   this.score = 0;
-  this.maxSpeed = 15;
+  this.maxSpeed = 20;
   this.maxFallSpeed = 10;
   this.dead = false;
   this.fitness = 0;
   this.brain = new Brain();
+  this.payingAttentionTo = walls[0];
+  this.nextWall = walls[1];
+  this.id = id;
 
   this.ang = 0;
 
@@ -91,20 +97,20 @@ function Ball(){
 
       let inputNodes = this.brain.layers[0];
       //must send as an object with a weight and value sent
-      let xGap = normalizeValue(0, canvas.width, population.payingAttentionTo.x - (this.x + this.r));
+      let xGap = normalizeValue(0, canvas.width, this.payingAttentionTo.x - (this.x + this.r));
       inputNodes[0].inputs.push({weight:1,val:xGap});
 
-      let topYGap = normalizeValue(-canvas.height, canvas.height, population.payingAttentionTo.gap.y - this.y)
+      let topYGap = normalizeValue(-canvas.height, canvas.height, this.payingAttentionTo.gap.y - (this.y - this.r))
       inputNodes[1].inputs.push({weight:1,val:topYGap});
 
-      let bottomYGap = normalizeValue(-canvas.height, canvas.height, Math.abs((population.payingAttentionTo.gap.y + population.payingAttentionTo.gap.h) - this.y))
+      let bottomYGap = normalizeValue(-canvas.height, canvas.height, Math.abs((this.payingAttentionTo.gap.y + this.payingAttentionTo.gap.h) - (this.y + this.r)))
       inputNodes[2].inputs.push({weight:1,val:bottomYGap});
 
-      let nextBottomYGap = normalizeValue(-canvas.height, canvas.height, Math.abs((population.nextWall.gap.y + population.nextWall.gap.h) - this.y))
-      inputNodes[3].inputs.push({weight:1,val:nextBottomYGap});
+      // let nextBottomYGap = normalizeValue(-canvas.height, canvas.height, Math.abs((this.nextWall.gap.y + this.nextWall.gap.h) - (this.y + this.r)))
+      // inputNodes[3].inputs.push({weight:1,val:nextBottomYGap});
 
-      let nextTopYGap = normalizeValue(-canvas.height, canvas.height, Math.abs(population.nextWall.gap.y - this.y))
-      inputNodes[4].inputs.push({weight:1,val:nextTopYGap});
+      // let nextTopYGap = normalizeValue(-canvas.height, canvas.height, Math.abs(this.nextWall.gap.y - (this.y - this.r)))
+      // inputNodes[4].inputs.push({weight:1,val:nextTopYGap});
      
       let output = this.brain.getOutput();
 
@@ -113,23 +119,15 @@ function Ball(){
       let diving = false;
 
       if(output.val > 0.5){
-        if(output.index == 0){
-          this.vel -= 20;
-        }else if(output.index == 1){
-          this.vel += 1;
-          diving = true;
-        }
+        this.vel -= 20;
       }
-
 
       // console.log(this.vel, diving, output)
       // if we are choosing to dive we will be able to faster than when in freefall
       if(this.vel > this.maxFallSpeed){
         this.vel = this.maxFallSpeed;
-      }else if(this.vel < -this.maxFallSpeed && diving == false){
+      }else if(this.vel < -this.maxFallSpeed){
         this.vel = -this.maxFallSpeed;
-      }else if(diving && this.vel < -this.maxSpeed){
-        this.vel = -this.maxSpeed;
       }
 
       this.y += this.vel;
@@ -141,10 +139,9 @@ function Ball(){
 
   this.checkCollision = function(){
 
-    if(walls[0].passed == false && this.x - this.r > walls[0].x + walls[0].w){
-      walls[0].passed = true;
-      population.payingAttentionTo = walls[1];
-      population.nextWall = walls[walls.length-1];
+    if(this.x - this.r > walls[0].x + walls[0].w){
+      this.payingAttentionTo = walls[1];
+      this.nextWall = walls[walls.length-1];
     }
 
     if(this.y + this.r > canvas.height){
@@ -181,6 +178,8 @@ function Ball(){
     this.vel =  0;
     this.acc = 0;
     this.dead = false;
+    this.payingAttentionTo = walls[0];
+    this.nextWall = walls[1];
   }
 
 }
@@ -195,11 +194,9 @@ function Population(size){
   this.genNum = 0;
   this.amountAlive = size;
   this.currentBestScore = 0;
-  this.payingAttentionTo = walls[0];
-  this.nextWall = walls[1];
 
   for (var i = 0; i < this.balls.length; i++) {
-    this.balls[i] = new Ball();
+    this.balls[i] = new Ball(i);
   }
 
   this.show = function(){
@@ -222,8 +219,6 @@ function Population(size){
         walls[i] = new Wall();
       }
 
-      this.payingAttentionTo = walls[0];
-      this.nextWall = walls[1];
       this.genNum++;
 
       this.createNewGeneration();
@@ -256,16 +251,14 @@ function Population(size){
 
       this.balls[0].reset();
 
+      console.log(this.balls[0].id);
+
        if(this.balls[0].score > this.bestScore){
           this.bestScore = this.balls[0].score;
         }
 
-      for (var i = 1; i < this.balls.length; i++) {
+      for (var i = 2; i < this.balls.length; i++) {
         this.balls[i].reset();
-
-        if(this.balls[i].score > this.bestScore){
-          this.bestScore = this.balls[i].score;
-        }
 
         this.balls[i].score = 0;
         this.balls[i].brain = deepCopyObject(this.balls[0].brain);

@@ -11,7 +11,20 @@ function drawEverything (){
     walls[i].show('green');
   }
 
-  // population.payingAttentionTo.show('purple');
+    // for (let i = 0; i < population.balls.length; i++) {
+    //   if(population.balls[i].dead == false){
+    //     population.balls[i].payingAttentionTo.show('purple');
+    //     break;
+    //   }
+    // }
+
+    // for (let i = 0; i < population.balls.length; i++) {
+    //   if(population.balls[i].dead == false){
+    //     population.balls[i].nextWall.show('blue');
+    //     break;
+    //   }
+    // }
+    
     
     population.update();
     population.show();
